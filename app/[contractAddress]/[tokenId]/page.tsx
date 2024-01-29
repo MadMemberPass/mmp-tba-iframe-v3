@@ -6,7 +6,7 @@ import { isNil } from "lodash";
 import { getAccount, getAccountStatus, getLensNfts, getNfts } from "@/lib/utils";
 import { rpcClient } from "@/lib/clients";
 import { TbLogo } from "@/components/icon";
-import { useGetApprovals, useNft } from "@/lib/hooks";
+import { useNft } from "@/lib/hooks";
 import { TbaOwnedNft } from "@/lib/types";
 import { getAddress } from "viem";
 import { TokenDetail } from "./TokenDetail";
@@ -23,6 +23,7 @@ interface TokenParams {
 }
 
 const CHAIN_ID = 1;
+const CHAIN_ID_FOR_ASSET = 137;
 
 export default function Token({ params, searchParams }: TokenParams) {
   const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -91,7 +92,7 @@ export default function Token({ params, searchParams }: TokenParams) {
   useEffect(() => {
     async function fetchNfts(account: string) {
       const [data, lensData] = await Promise.all([
-        getNfts(CHAIN_ID, account),
+        getNfts(CHAIN_ID_FOR_ASSET, account),
         getLensNfts(account),
       ]);
 
@@ -112,29 +113,17 @@ export default function Token({ params, searchParams }: TokenParams) {
 
   const allNfts = [...nfts, ...lensNfts];
 
-  const { data: approvalData } = useGetApprovals(allNfts, account);
-
   useEffect(() => {
     if (nfts !== undefined && nfts.length) {
       nfts.map((token) => {
-        const foundApproval = approvalData?.find((item) => {
-          const contract = item.contract.address;
-          const tokenId = item.tokenId;
-          const hasApprovals = item.hasApprovals;
-          const matchedAddress = getAddress(contract) === getAddress(token.contract.address);
-          const matchedTokenId = String(tokenId) && String(token.tokenId);
-          if (matchedAddress && matchedTokenId && hasApprovals) {
-            return true;
-          }
-        });
-        token.hasApprovals = foundApproval?.hasApprovals || false;
+        token.hasApprovals = false
       });
       setTokens(nfts);
       if (lensNfts) {
         setTokens([...nfts, ...lensNfts]);
       }
     }
-  }, [nfts, approvalData, lensNfts]);
+  }, [nfts, lensNfts]);
 
   return (
     <div className="w-screen h-screen bg-slate-100">
@@ -144,7 +133,7 @@ export default function Token({ params, searchParams }: TokenParams) {
             <TokenDetail
               isOpen={showTokenDetail}
               handleOpenClose={setShowTokenDetail}
-              approvalTokensCount={approvalData?.filter((item) => item.hasApprovals).length}
+              approvalTokensCount={0}
               account={account}
               tokens={tokens}
               title={nftMetadata.title}

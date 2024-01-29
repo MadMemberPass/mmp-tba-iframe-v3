@@ -57,7 +57,7 @@ export async function getAccount(
       address: tokenboundAddress as `0x${string}`,
       abi: tokenboundAbi,
       functionName: "account",
-      args: [implementationAddress, String(chainId), contractAddress, tokenId, salt],
+      args: [implementationAddress, salt, String(chainId), contractAddress, tokenId],
     })) as string;
     return { data: response };
   } catch (err) {
